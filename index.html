@@ -6,6 +6,7 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1">
   <title>I Like Chemistry!</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,6 +14,7 @@
       text-align: center;
       padding: 40px 15px;
     }
+
     .container {
       background: white;
       max-width: 400px;
@@ -21,7 +23,9 @@
       border-radius: 16px;
       box-shadow: 0 4px 15px #0001;
     }
+
     h1 { color: #16804a; }
+
     input {
       box-sizing: border-box;
       width: 100%;
@@ -30,6 +34,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
     }
+
     button {
       background: #16804a;
       color: white;
@@ -39,25 +44,148 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    #message {
+      margin-top: 15px;
+      color: #b42318;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>I Like Chemistry!</h1>
     <h2>Hóa học kỳ thú THCS</h2>
     <p>Chào mừng các nhà thám hiểm hóa học!</p>
 
-    <input type="text"
-           placeholder="Mã học sinh">
+    <form id="loginForm">
+      <input
+        id="studentCode"
+        type="text"
+        placeholder="Mã học sinh"
+        autocomplete="username"
+        required
+      >
 
-    <input type="password"
-           placeholder="Mật khẩu">
+      <input
+        id="password"
+        type="password"
+        placeholder="Mật khẩu"
+        autocomplete="current-password"
+        required
+      >
 
-    <button type="button">
-      Đăng nhập
-    </button>
+      <button id="loginButton" type="submit">
+        Đăng nhập
+      </button>
+    </form>
 
+    <p id="message" role="status"></p>
     <p>Học mà chơi - Chơi mà học</p>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script>
+    // Thay hai giá trị này bằng thông tin dự án.
+    const SUPABASE_URL = "https://hbynzakjamnnnimjqezj.supabase.co/rest/v1/";
+    const SUPABASE_KEY = "sb_publishable_aiF8co3VQKvNr7EZYGgB6A_yHnrXCsp";
+
+    const db = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+    const button = document.getElementById("loginButton");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const code = document
+        .getElementById("studentCode")
+        .value.trim();
+
+      const password = document
+        .getElementById("password")
+        .value;
+
+      if (!/^Student\d+$/i.test(code)) {
+        message.textContent = "Mã học sinh không hợp lệ.";
+        return;
+      }
+
+      const email =
+        code.toLowerCase() +
+        "@students.ilikechemistry.invalid";
+
+      message.textContent = "";
+      button.disabled = true;
+      button.textContent = "Đang đăng nhập...";
+
+      try {
+        const { data, error } =
+          await db.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
+
+        if (error) {
+          message.textContent =
+            "Mã học sinh hoặc mật khẩu không đúng.";
+          return;
+        }
+
+        const { data: profile, error: profileError } =
+          await db
+            .from("profiles")
+            .select("student_code, nickname, role")
+            .eq("id", data.user.id)
+            .single();
+
+        if (
+          profileError ||
+          !profile ||
+          profile.role !== "student" ||
+          profile.student_code.toLowerCase() !==
+            code.toLowerCase()
+        ) {
+          await db.auth.signOut();
+          message.textContent =
+            "Tài khoản không có quyền học sinh.";
+          return;
+        }
+
+        document.querySelector(".container").innerHTML =
+          "<h1>Đăng nhập thành công!</h1>" +
+          "<p>Chào mừng bạn đến với I Like Chemistry!</p>" +
+          "<p id='welcomeName'></p>" +
+          "<p>Trò chơi sẽ được mở sau khi kiểm thử.</p>" +
+          "<button id='logoutButton'>Đăng xuất</button>";
+
+        document.getElementById("welcomeName")
+          .textContent = profile.nickname;
+
+        document.getElementById("logoutButton")
+          .addEventListener("click", async () => {
+            await db.auth.signOut();
+            window.location.reload();
+          });
+
+      } catch (err) {
+        message.textContent =
+          "Không thể kết nối Supabase. Hãy kiểm tra cấu hình.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Đăng nhập";
+      }
+    });
+  </script>
 </body>
 </html>
