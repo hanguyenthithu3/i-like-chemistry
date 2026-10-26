@@ -8,183 +8,526 @@
   <title>I Like Chemistry!</title>
 
   <style>
+    * { box-sizing: border-box; }
+
     body {
       font-family: Arial, sans-serif;
       background: #eaf7f0;
-      text-align: center;
-      padding: 40px 15px;
+      color: #24352b;
+      margin: 0;
+      padding: 24px 12px;
     }
 
     .container {
       background: white;
-      max-width: 400px;
-      margin: 40px auto;
-      padding: 30px;
+      max-width: 760px;
+      margin: 20px auto;
+      padding: 28px;
       border-radius: 16px;
       box-shadow: 0 4px 15px #0001;
     }
 
-    h1 { color: #16804a; }
+    h1, h2 { color: #16804a; }
+
+    header { text-align: center; }
 
     input {
-      box-sizing: border-box;
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
+      margin: 8px 0;
+      border: 1px solid #bbb;
       border-radius: 8px;
+      font-size: 16px;
     }
 
     button {
       background: #16804a;
       color: white;
       border: none;
-      padding: 12px;
-      width: 100%;
+      padding: 12px 18px;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 16px;
+      margin: 5px 0;
     }
 
     button:disabled {
       opacity: 0.6;
-      cursor: wait;
+      cursor: not-allowed;
     }
 
-    #message {
-      margin-top: 15px;
-      color: #b42318;
+    .secondary { background: #596b60; }
+
+    .question {
+      border: 1px solid #dce8df;
+      border-radius: 12px;
+      padding: 18px;
+      margin: 18px 0;
     }
+
+    .option {
+      display: block;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      background: #f3f8f4;
+      cursor: pointer;
+    }
+
+    .option input {
+      width: auto;
+      margin-right: 10px;
+    }
+
+    .message {
+      margin: 15px 0;
+      color: #a62b24;
+    }
+
+    .success { color: #16804a; }
+
+    .hidden { display: none; }
+
+    .center { text-align: center; }
+
+    .score {
+      font-size: 30px;
+      font-weight: bold;
+      color: #16804a;
+    }
+
+    .note { color: #52645a; }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>I Like Chemistry!</h1>
-    <h2>Hóa học kỳ thú THCS</h2>
-    <p>Chào mừng các nhà thám hiểm hóa học!</p>
+  <main class="container">
+    <header>
+      <h1>I Like Chemistry!</h1>
+      <h2>Hóa học kỳ thú THCS</h2>
+      <p>Học mà chơi – Chơi mà học</p>
+    </header>
 
-    <form id="loginForm">
-      <input
-        id="studentCode"
-        type="text"
-        placeholder="Mã học sinh"
-        autocomplete="username"
-        required
-      >
+    <section id="loginSection">
+      <h2>Đăng nhập học sinh</h2>
 
-      <input
-        id="password"
-        type="password"
-        placeholder="Mật khẩu"
-        autocomplete="current-password"
-        required
-      >
+      <form id="loginForm">
+        <input
+          id="studentCode"
+          type="text"
+          placeholder="Mã học sinh"
+          autocomplete="username"
+          required
+        >
 
-      <button id="loginButton" type="submit">
-        Đăng nhập
+        <input
+          id="password"
+          type="password"
+          placeholder="Mật khẩu"
+          autocomplete="current-password"
+          required
+        >
+
+        <button id="loginButton" type="submit">
+          Đăng nhập
+        </button>
+      </form>
+    </section>
+
+    <section id="studentSection" class="hidden">
+      <p>Xin chào, <strong id="nickname"></strong>!</p>
+
+      <button id="logoutButton" class="secondary">
+        Đăng xuất
       </button>
-    </form>
 
-    <p id="message" role="status"></p>
-    <p>Học mà chơi - Chơi mà học</p>
-  </div>
+      <div id="challengeSection">
+        <h2>Thám tử hóa học</h2>
+        <p>Thử thách 1: Thám tử phân loại hiện tượng</p>
+        <p>25 câu hỏi trắc nghiệm</p>
+        <p>Tối đa 3 lượt làm bài.</p>
+
+        <button id="startButton">
+          Bắt đầu làm bài
+        </button>
+      </div>
+
+      <div id="quizSection" class="hidden">
+        <h2>Bài làm của em</h2>
+        <p class="note">
+          Hãy trả lời tất cả câu hỏi trước khi nộp bài.
+        </p>
+
+        <form id="quizForm">
+          <div id="questionsContainer"></div>
+
+          <button id="submitButton" type="submit">
+            Nộp bài
+          </button>
+        </form>
+      </div>
+
+      <div id="resultSection"
+           class="hidden center">
+        <h2>Kết quả</h2>
+        <p>Điểm của em:</p>
+        <p id="scoreValue" class="score"></p>
+
+        <button id="backButton">
+          Quay lại thử thách
+        </button>
+      </div>
+    </section>
+
+    <p id="message" class="message"
+       role="status" aria-live="polite"></p>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <script>
-    // Thay hai giá trị này bằng thông tin dự án.
-    const SUPABASE_URL = "https://hbynzakjamnnnimjqezj.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_aiF8co3VQKvNr7EZYGgB6A_yHnrXCsp";
+    // Điền thông tin dự án Supabase tại đây.
+    const SUPABASE_URL =
+      "DAN_PROJECT_URL_VAO_DAY";
+
+    const SUPABASE_KEY =
+      "DAN_PUBLISHABLE_KEY_VAO_DAY";
 
     const db = supabase.createClient(
       SUPABASE_URL,
       SUPABASE_KEY
     );
 
-    const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
-    const button = document.getElementById("loginButton");
+    const $ = (id) => document.getElementById(id);
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    let currentAttemptId = null;
+    let currentQuestions = [];
 
-      const code = document
-        .getElementById("studentCode")
-        .value.trim();
+    function showMessage(text, success = false) {
+      $("message").textContent = text;
+      $("message").className =
+        success ? "message success" : "message";
+    }
 
-      const password = document
-        .getElementById("password")
-        .value;
+    function showSection(sectionId) {
+      for (const id of [
+        "challengeSection",
+        "quizSection",
+        "resultSection"
+      ]) {
+        $(id).classList.toggle(
+          "hidden",
+          id !== sectionId
+        );
+      }
+    }
 
-      if (!/^Student\d+$/i.test(code)) {
-        message.textContent = "Mã học sinh không hợp lệ.";
+    async function showStudent(user) {
+      const { data: profile, error } =
+        await db
+          .from("profiles")
+          .select("nickname, role, student_code")
+          .eq("id", user.id)
+          .single();
+
+      if (error || !profile ||
+          profile.role !== "student") {
+        await db.auth.signOut();
+        showMessage(
+          "Tài khoản không có quyền học sinh."
+        );
         return;
       }
 
-      const email =
-        code.toLowerCase() +
-        "@students.ilikechemistry.invalid";
+      $("nickname").textContent = profile.nickname;
+      $("loginSection").classList.add("hidden");
+      $("studentSection").classList.remove("hidden");
 
-      message.textContent = "";
-      button.disabled = true;
-      button.textContent = "Đang đăng nhập...";
+      showSection("challengeSection");
+      showMessage("");
+    }
 
-      try {
-        const { data, error } =
-          await db.auth.signInWithPassword({
-            email: email,
-            password: password
-          });
+    $("loginForm").addEventListener(
+      "submit",
+      async (event) => {
+        event.preventDefault();
 
-        if (error) {
-          message.textContent =
-            "Mã học sinh hoặc mật khẩu không đúng.";
+        const code =
+          $("studentCode").value.trim();
+
+        const password =
+          $("password").value;
+
+        if (!/^Student\d+$/i.test(code)) {
+          showMessage("Mã học sinh không hợp lệ.");
           return;
         }
 
-        const { data: profile, error: profileError } =
-          await db
-            .from("profiles")
-            .select("student_code, nickname, role")
-            .eq("id", data.user.id)
-            .single();
+        const email =
+          code.toLowerCase() +
+          "@students.ilikechemistry.invalid";
 
-        if (
-          profileError ||
-          !profile ||
-          profile.role !== "student" ||
-          profile.student_code.toLowerCase() !==
-            code.toLowerCase()
-        ) {
-          await db.auth.signOut();
-          message.textContent =
-            "Tài khoản không có quyền học sinh.";
-          return;
-        }
+        $("loginButton").disabled = true;
+        showMessage("Đang đăng nhập...");
 
-        document.querySelector(".container").innerHTML =
-          "<h1>Đăng nhập thành công!</h1>" +
-          "<p>Chào mừng bạn đến với I Like Chemistry!</p>" +
-          "<p id='welcomeName'></p>" +
-          "<p>Trò chơi sẽ được mở sau khi kiểm thử.</p>" +
-          "<button id='logoutButton'>Đăng xuất</button>";
+        try {
+          const { data, error } =
+            await db.auth.signInWithPassword({
+              email,
+              password
+            });
 
-        document.getElementById("welcomeName")
-          .textContent = profile.nickname;
+          if (error) {
+            showMessage(
+              "Mã học sinh hoặc mật khẩu không đúng."
+            );
+            return;
+          }
 
-        document.getElementById("logoutButton")
-          .addEventListener("click", async () => {
+          const { data: profile, error: pError } =
+            await db
+              .from("profiles")
+              .select("student_code, role")
+              .eq("id", data.user.id)
+              .single();
+
+          if (
+            pError ||
+            !profile ||
+            profile.role !== "student" ||
+            profile.student_code.toLowerCase() !==
+              code.toLowerCase()
+          ) {
             await db.auth.signOut();
-            window.location.reload();
-          });
+            showMessage(
+              "Tài khoản không có quyền học sinh."
+            );
+            return;
+          }
 
-      } catch (err) {
-        message.textContent =
-          "Không thể kết nối Supabase. Hãy kiểm tra cấu hình.";
-      } finally {
-        button.disabled = false;
-        button.textContent = "Đăng nhập";
+          await showStudent(data.user);
+
+        } catch {
+          showMessage(
+            "Không thể kết nối Supabase."
+          );
+        } finally {
+          $("loginButton").disabled = false;
+        }
       }
+    );
+
+    $("logoutButton").addEventListener(
+      "click",
+      async () => {
+        await db.auth.signOut();
+        window.location.reload();
+      }
+    );
+
+    $("startButton").addEventListener(
+      "click",
+      async () => {
+        const confirmed = window.confirm(
+          "Bắt đầu thử thách? " +
+          "Lượt chơi sẽ được tính ngay khi bắt đầu."
+        );
+
+        if (!confirmed) return;
+
+        $("startButton").disabled = true;
+        showMessage("Đang chuẩn bị câu hỏi...");
+
+        try {
+          const { data: attemptId, error: startError } =
+            await db.rpc("start_challenge", {
+              p_challenge_id: 1
+            });
+
+          if (startError) {
+            showMessage(
+              "Không thể bắt đầu thử thách. " +
+              "Có thể em đã dùng hết 3 lượt " +
+              "hoặc thử thách chưa được mở."
+            );
+            return;
+          }
+
+          currentAttemptId = attemptId;
+
+          const { data: questions, error: qError } =
+            await db.rpc("get_attempt_questions", {
+              p_attempt_id: currentAttemptId
+            });
+
+          if (qError || !questions ||
+              questions.length === 0) {
+            showMessage(
+              "Đã tạo lượt chơi nhưng chưa tải được " +
+              "câu hỏi. Không nhấn Bắt đầu lần nữa. " +
+              "Hãy báo giáo viên."
+            );
+            return;
+          }
+
+          currentQuestions = questions;
+          renderQuestions(questions);
+          showSection("quizSection");
+          showMessage("");
+
+        } catch {
+          showMessage(
+            "Có lỗi kết nối. Hãy báo giáo viên " +
+            "trước khi bắt đầu lượt khác."
+          );
+        } finally {
+          $("startButton").disabled = false;
+        }
+      }
+    );
+
+    function renderQuestions(questions) {
+      const container = $("questionsContainer");
+      container.replaceChildren();
+
+      questions.forEach((q, index) => {
+        const article =
+          document.createElement("article");
+
+        article.className = "question";
+
+        const heading =
+          document.createElement("h3");
+
+        heading.textContent =
+          `Câu ${index + 1}: ${q.question_text}`;
+
+        article.appendChild(heading);
+
+        for (const letter of ["A", "B", "C", "D"]) {
+          const label =
+            document.createElement("label");
+
+          label.className = "option";
+
+          const radio =
+            document.createElement("input");
+
+          radio.type = "radio";
+          radio.name = `question_${q.question_id}`;
+          radio.value = letter;
+
+          const text =
+            document.createElement("span");
+
+          text.textContent =
+            `${letter}. ${q["option_" +
+              letter.toLowerCase()]}`;
+
+          label.appendChild(radio);
+          label.appendChild(text);
+          article.appendChild(label);
+        }
+
+        container.appendChild(article);
+      });
+    }
+
+    $("quizForm").addEventListener(
+      "submit",
+      async (event) => {
+        event.preventDefault();
+
+        if (!currentAttemptId ||
+            currentQuestions.length === 0) {
+          showMessage("Chưa có bài làm hợp lệ.");
+          return;
+        }
+
+        const answers = {};
+
+        for (const q of currentQuestions) {
+          const selected =
+            document.querySelector(
+              `input[name="question_${q.question_id}"]:checked`
+            );
+
+          if (!selected) {
+            showMessage(
+              "Em cần trả lời đủ 25 câu trước khi nộp."
+            );
+            return;
+          }
+
+          answers[String(q.question_id)] =
+            selected.value;
+        }
+
+        if (!window.confirm(
+          "Em chắc chắn muốn nộp bài?"
+        )) return;
+
+        $("submitButton").disabled = true;
+        showMessage("Đang chấm điểm...");
+
+        try {
+          const { data: score, error } =
+            await db.rpc("submit_attempt", {
+              p_attempt_id: currentAttemptId,
+              p_answers: answers
+            });
+
+          if (error) {
+            showMessage(
+              "Chưa xác nhận được kết quả nộp bài. " +
+              "Hãy báo giáo viên trước khi thử lại."
+            );
+            return;
+          }
+
+          $("scoreValue").textContent =
+            `${score}/100`;
+
+          currentAttemptId = null;
+          currentQuestions = [];
+
+          showSection("resultSection");
+          showMessage(
+            "Đã nộp bài thành công!",
+            true
+          );
+
+        } catch {
+          showMessage(
+            "Mất kết nối khi nộp bài. " +
+            "Hãy báo giáo viên để kiểm tra điểm."
+          );
+        } finally {
+          $("submitButton").disabled = false;
+        }
+      }
+    );
+
+    $("backButton").addEventListener(
+      "click",
+      () => {
+        showSection("challengeSection");
+        showMessage("");
+      }
+    );
+
+    async function restoreSession() {
+      const { data } = await db.auth.getUser();
+
+      if (data.user) {
+        await showStudent(data.user);
+      }
+    }
+
+    restoreSession().catch(() => {
+      showMessage(
+        "Không thể kiểm tra phiên đăng nhập."
+      );
     });
   </script>
 </body>
