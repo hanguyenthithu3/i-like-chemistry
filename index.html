@@ -142,6 +142,16 @@
       </button>
 
       <div id="challengeSection">
+        <div id="studentStats"
+     style="background:#f0f8f2; padding:15px;
+            border-radius:10px; margin:15px 0;">
+  <p><strong>Điểm cao nhất:</strong>
+    <span id="bestScore">Chưa có</span>
+  </p>
+  <p><strong>Số lượt đã hoàn thành:</strong>
+    <span id="completedAttempts">0</span>/3
+  </p>
+</div>
         <h2>Thám tử hóa học</h2>
         <p>Thử thách 1: Thám tử phân loại hiện tượng</p>
         <p>25 câu hỏi trắc nghiệm</p>
@@ -222,6 +232,25 @@
       }
     }
 
+async function loadStudentStats(userId) {
+  const { data, error } = await db
+    .from("student_best_scores")
+    .select("best_score, completed_attempts")
+    .eq("student_id", userId)
+    .eq("challenge_id", 1)
+    .maybeSingle();
+
+  if (error) {
+    showMessage("Chưa tải được lịch sử điểm.");
+    return;
+  }
+
+  $("bestScore").textContent =
+    data ? `${data.best_score}/100` : "Chưa có";
+
+  $("completedAttempts").textContent =
+    data ? data.completed_attempts : 0;
+}
     async function showStudent(user) {
       const { data: profile, error } =
         await db
@@ -512,6 +541,7 @@
       "click",
       () => {
         showSection("challengeSection");
+        await loadStudentStats(user.id);
         showMessage("");
       }
     );
